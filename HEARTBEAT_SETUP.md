@@ -124,6 +124,28 @@ GSTREAMER_SERVICE = "audio-receiver.service" # nome servizio systemd
 
 ---
 
+## Cosa invia il daemon (Step 3.4)
+
+Dal 2026-05-18 il daemon `send_heartbeat.ps1` invia un payload JSON ricco insieme al heartbeat. Prima di ogni POST interroga:
+
+- `GET http://localhost:11434/api/tags` (timeout 3s) -> lista modelli scaricati in `models_loaded`
+- `GET http://localhost:11434/api/ps` (timeout 3s) -> lista modelli caldi in VRAM in `models_warm`
+- `nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits` -> VRAM libera in MB in `vram_free_mb` (`null` se nvidia-smi assente)
+
+Il payload viene mandato come body JSON sulla `POST /heartbeat`. Il monitor Pi lo conserva in memoria (`workstation_state`) e lo espone in lettura su `GET /state/ws`. Il bot Telegram su Pi consulta quell'endpoint ogni 30 secondi per decidere se mandare la richiesta NLU/chat alla workstation (qwen3:4b/qwen3:14b GPU) o al fallback locale Pi (L0 regex + qwen3:1.7b L1).
+
+**Backward-compat**: se Ollama o nvidia-smi falliscono, il daemon manda comunque il payload con `ollama_ready: false` e `vram_free_mb: null`. Il monitor accetta ANCHE body vuoto, quindi vecchi daemon o test manuali con `curl -X POST ...` continuano a funzionare per il solo audio switching.
+
+**Test manuale dello stato (da qualsiasi host del tailnet o LAN):**
+
+```bash
+curl -s http://192.168.68.68:5006/state/ws | python3 -m json.tool
+```
+
+Se `ollama_ready: true` e `nlu_available: true`, il bot routera' tutto verso la workstation. Se `freshness_seconds > 180`, il bot considera la workstation offline e usa il Pi fallback.
+
+---
+
 ## Troubleshooting
 
 ### Heartbeat non arriva

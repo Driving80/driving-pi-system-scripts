@@ -85,6 +85,80 @@ $TaskSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopI
 Register-ScheduledTask -TaskName "Heartbeat Sender" -Action $TaskAction -Trigger $TaskTrigger -Settings $TaskSettings
 ```
 
+## API endpoints
+
+### POST /heartbeat
+
+Riceve heartbeat dalla workstation Windows. **Body opzionale**: JSON con stato ricco (Step 3.4) o vuoto (legacy audio switching).
+
+**Request (Step 3.4 rich payload):**
+
+```http
+POST /heartbeat HTTP/1.1
+Host: 192.168.68.68:5006
+Content-Type: application/json
+
+{
+  "ts": "2026-05-18T10:00:00Z",
+  "ollama_ready": true,
+  "models_loaded": ["qwen3:4b", "qwen3:14b", "bge-m3"],
+  "models_warm": ["qwen3:14b"],
+  "vram_free_mb": 3072,
+  "sleep_policy": "manual_only"
+}
+```
+
+**Request (legacy, solo audio switching):**
+
+```http
+POST /heartbeat HTTP/1.1
+Host: 192.168.68.68:5006
+```
+(body vuoto — il monitor aggiorna solo il timestamp per la commutazione audio librespot <-> GStreamer)
+
+**Response:**
+
+```json
+{"status": "heartbeat received", "timestamp": "2026-05-18T10:00:00.123456Z"}
+```
+
+### GET /state/ws  *(nuovo Step 3.4)*
+
+Stato workstation consumato dal bot Telegram su Pi (`telegram-bot-pi.service`) per routing dinamico NLU+chat.
+
+**Response:**
+
+```json
+{
+  "ws_state": {
+    "ts": "2026-05-18T10:00:00Z",
+    "ollama_ready": true,
+    "models_loaded": ["qwen3:4b", "qwen3:14b", "bge-m3"],
+    "models_warm": ["qwen3:14b"],
+    "vram_free_mb": 3072,
+    "sleep_policy": "manual_only"
+  },
+  "freshness_seconds": 12,
+  "nlu_available": true,
+  "chat_available": true,
+  "computed_at": "2026-05-18T10:00:12Z"
+}
+```
+
+Logica `nlu_available`: `freshness_seconds <= 180 AND ws_state.ollama_ready AND "qwen3:4b" in ws_state.models_loaded AND (ws_state.vram_free_mb is null OR ws_state.vram_free_mb >= 2048)`.
+
+Logica `chat_available`: come sopra ma con `qwen3:14b` e soglia VRAM 4096 MB (modello piu' grande, richiede piu' margine).
+
+Se `workstation_state is null` (nessun heartbeat mai ricevuto) o `freshness > 180s`, entrambe le bool sono `false`.
+
+### GET /status
+
+Diagnostica audio (esistente, invariato).
+
+```json
+{"windows_online": true, "last_heartbeat": "...", "librespot_active": false, "gstreamer_active": true, ...}
+```
+
 ## Troubleshooting
 
 Vedi `HEARTBEAT_SETUP.md` § Troubleshooting.
