@@ -22,7 +22,7 @@ from contextlib import asynccontextmanager
 
 # Config
 HEARTBEAT_WINDOW = 90  # seconds — if no update within this window, consider Windows offline
-HEARTBEAT_PORT = 5005
+HEARTBEAT_PORT = 5006
 HEARTBEAT_HOST = "0.0.0.0"
 
 # Adaptive NLU Routing thresholds (Step 3.4 — see ADR 30 in Driving80/ai-powered)

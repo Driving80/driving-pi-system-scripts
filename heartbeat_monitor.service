@@ -5,13 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=audio
-WorkingDirectory=/home/audio
-ExecStart=/usr/bin/python3 /home/audio/heartbeat_monitor.py
+User=guido
+WorkingDirectory=/home/guido/driving-pi-system-scripts
+ExecStart=/home/guido/driving-pi-system-scripts/start_heartbeat.sh
 Restart=always
 RestartSec=5
-
-# Logging to systemd journal
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=heartbeat-monitor
