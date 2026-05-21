@@ -43,3 +43,36 @@ Describe "Brand colors (drivingtech)" {
         $c1.B | Should Be $c2.B
     }
 }
+
+. (Join-Path $repoRoot "claymore-keymap-loader.ps1")
+
+Describe "Keymap loader" {
+    $fixturePath = Join-Path $here "fixtures\sample-keymap.json"
+
+    It "Carica e parse JSON valido senza errore" {
+        $km = Import-ClaymoreKeymap -Path $fixturePath
+        $km | Should Not BeNullOrEmpty
+    }
+
+    It "Espone .leds come hashtable con LED index (stringa) come chiave" {
+        $km = Import-ClaymoreKeymap -Path $fixturePath
+        $km.leds.ContainsKey("0") | Should Be $true
+        $km.leds.Count | Should Be 4
+    }
+
+    It "Get-LedFamily restituisce family corretta per LED noto nella fixture" {
+        $km = Import-ClaymoreKeymap -Path $fixturePath
+        Get-LedFamily -Keymap $km -LedIndex 0 | Should Be "magenta"
+        Get-LedFamily -Keymap $km -LedIndex 1 | Should Be "cyan"
+        Get-LedFamily -Keymap $km -LedIndex 3 | Should Be "lime"
+    }
+
+    It "Get-LedFamily fa fallback su lime per LED non mappato" {
+        $km = Import-ClaymoreKeymap -Path $fixturePath
+        Get-LedFamily -Keymap $km -LedIndex 99999 | Should Be "lime"
+    }
+
+    It "Solleva errore se file inesistente" {
+        { Import-ClaymoreKeymap -Path "C:\does\not\exist.json" } | Should Throw "Keymap file not found"
+    }
+}
