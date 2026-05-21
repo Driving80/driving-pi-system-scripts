@@ -1,4 +1,4 @@
-# calibrate-claymore.ps1 — Generate claymore-brand-keymap.json by interactive LED probing.
+# calibrate-claymore.ps1 - Generate claymore-brand-keymap.json by interactive LED probing.
 #
 # Schema flat: mappa LED index (stringa) -> brand color family.
 # Probiamo SOLO endpoint 0 (i 2 endpoint enumerati dalla SDK sono mirror
