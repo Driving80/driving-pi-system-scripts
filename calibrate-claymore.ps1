@@ -44,98 +44,105 @@ if ($Resume -and (Test-Path $OutputPath)) {
     }
 }
 
-# --- SDK init ---
+# --- SDK init + main loop (wrapped in try/finally for SDK cleanup on any exit path) ---
 Write-Host "Acquiring Aura SDK..." -ForegroundColor Yellow
 $sdk = New-Object -ComObject "Aura.Sdk"
-$null = $sdk.RequireDeviceControlState(0x80000)
-$devices = $sdk.Enumerate(0x80000)
-$sdk.SwitchMode()
-Start-Sleep -Milliseconds 300
 
-if ($devices.Count -eq 0) {
-    throw "No keyboard devices found. Is Armoury Crate running?"
-}
+try {
+    $null = $sdk.RequireDeviceControlState(0x80000)
+    $devices = $sdk.Enumerate(0x80000)
+    $sdk.SwitchMode()
+    Start-Sleep -Milliseconds 300
 
-Write-Host "Enumerated $($devices.Count) keyboard endpoint(s):" -ForegroundColor Cyan
-foreach ($d in $devices) {
-    Write-Host ("  Name={0}  Lights={1}  {2}x{3}" -f $d.Name, $d.Lights.Count, $d.Width, $d.Height)
-}
-
-$mag   = Get-ClaymoreBrandColor "magenta"
-$lime  = Get-ClaymoreBrandColor "lime"
-$black = @{ R = 0; G = 0; B = 0 }
-
-$ledCount = $devices[0].Lights.Count
-$lo = $StartIndex
-$hi = if ($EndIndex -lt 0) { $ledCount - 1 } else { [Math]::Min($EndIndex, $ledCount - 1) }
-
-Write-Host "`nCalibrating LEDs $lo..$hi (writing both endpoints in mirror)" -ForegroundColor Cyan
-
-for ($i = $lo; $i -le $hi; $i++) {
-    # Skip se gia' mappato e --Resume
-    if ($Resume -and $ledMap.ContainsKey($i.ToString())) {
-        continue
+    if ($devices.Count -eq 0) {
+        throw "No keyboard devices found. Is Armoury Crate running?"
     }
 
-    # Spegni tutti i LED su tutti gli endpoint
+    Write-Host "Enumerated $($devices.Count) keyboard endpoint(s):" -ForegroundColor Cyan
+    foreach ($d in $devices) {
+        Write-Host ("  Name={0}  Lights={1}  {2}x{3}" -f $d.Name, $d.Lights.Count, $d.Width, $d.Height)
+    }
+
+    $mag   = Get-ClaymoreBrandColor "magenta"
+    $lime  = Get-ClaymoreBrandColor "lime"
+    $black = @{ R = 0; G = 0; B = 0 }
+
+    $ledCount = $devices[0].Lights.Count
+    $lo = $StartIndex
+    $hi = if ($EndIndex -lt 0) { $ledCount - 1 } else { [Math]::Min($EndIndex, $ledCount - 1) }
+
+    Write-Host "`nCalibrating LEDs $lo..$hi (writing both endpoints in mirror)" -ForegroundColor Cyan
+
+    for ($i = $lo; $i -le $hi; $i++) {
+        # Skip se gia' mappato e --Resume
+        if ($Resume -and $ledMap.ContainsKey($i.ToString())) {
+            continue
+        }
+
+        # Spegni tutti i LED su tutti gli endpoint
+        foreach ($device in $devices) {
+            for ($j = 0; $j -lt $device.Lights.Count; $j++) {
+                $device.Lights[$j].Red   = $black.R
+                $device.Lights[$j].Green = $black.G
+                $device.Lights[$j].Blue  = $black.B
+            }
+        }
+        # Accendi LED $i in MAGENTA su tutti gli endpoint (mirror)
+        foreach ($device in $devices) {
+            if ($i -lt $device.Lights.Count) {
+                $device.Lights[$i].Red   = $mag.R
+                $device.Lights[$i].Green = $mag.G
+                $device.Lights[$i].Blue  = $mag.B
+            }
+        }
+        foreach ($device in $devices) { $device.Apply() }
+
+        Write-Host -NoNewline "LED[$i] - famiglia? (l=lime c=cyan m=magenta s=skip q=quit) > "
+        $response = Read-Host
+        $response = $response.Trim().ToLowerInvariant()
+
+        switch ($response) {
+            "l" { $ledMap[$i.ToString()] = "lime" }
+            "c" { $ledMap[$i.ToString()] = "cyan" }
+            "m" { $ledMap[$i.ToString()] = "magenta" }
+            "s" { Write-Host "  skipped (no entry written)" -ForegroundColor DarkGray }
+            "q" {
+                Write-Host "Quitting at LED $i. Saving partial keymap..." -ForegroundColor Yellow
+            }
+            default {
+                Write-Host "  invalid response, treating as skip" -ForegroundColor Red
+            }
+        }
+        if ($response -eq "q") { break }
+    }
+
+    # Apply un colore "neutro" cosi' Guido vede che il device e' finito
     foreach ($device in $devices) {
         for ($j = 0; $j -lt $device.Lights.Count; $j++) {
-            $device.Lights[$j].Red   = $black.R
-            $device.Lights[$j].Green = $black.G
-            $device.Lights[$j].Blue  = $black.B
+            $device.Lights[$j].Red   = $lime.R
+            $device.Lights[$j].Green = $lime.G
+            $device.Lights[$j].Blue  = $lime.B
         }
+        $device.Apply()
     }
-    # Accendi LED $i in MAGENTA su tutti gli endpoint (mirror)
-    foreach ($device in $devices) {
-        if ($i -lt $device.Lights.Count) {
-            $device.Lights[$i].Red   = $mag.R
-            $device.Lights[$i].Green = $mag.G
-            $device.Lights[$i].Blue  = $mag.B
-        }
-    }
-    foreach ($device in $devices) { $device.Apply() }
 
-    Write-Host -NoNewline "LED[$i] - famiglia? (l=lime c=cyan m=magenta s=skip q=quit) > "
-    $response = Read-Host
-    $response = $response.Trim().ToLowerInvariant()
-
-    switch ($response) {
-        "l" { $ledMap[$i.ToString()] = "lime" }
-        "c" { $ledMap[$i.ToString()] = "cyan" }
-        "m" { $ledMap[$i.ToString()] = "magenta" }
-        "s" { Write-Host "  skipped (no entry written)" -ForegroundColor DarkGray }
-        "q" {
-            Write-Host "Quitting at LED $i. Saving partial keymap..." -ForegroundColor Yellow
-        }
-        default {
-            Write-Host "  invalid response, treating as skip" -ForegroundColor Red
-        }
+    # --- Salva JSON (anche se quit, salva quello mappato fin qui) ---
+    $out = [ordered]@{
+        version      = 1
+        device       = "Claymore II"
+        generated_by = "calibrate-claymore.ps1 ($(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))"
+        leds         = $ledMap
     }
-    if ($response -eq "q") { break }
+    $json = $out | ConvertTo-Json -Depth 10
+    Set-Content -Path $OutputPath -Value $json -Encoding UTF8
+
+    Write-Host "`nKeymap saved to: $OutputPath" -ForegroundColor Green
+    Write-Host "Total mapped LEDs: $($ledMap.Count)"
+
+} finally {
+    # SDK cleanup garantito anche su exception o Ctrl+C
+    if ($null -ne $sdk) {
+        try { $sdk.ReleaseControl(0) } catch {}
+        try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($sdk) | Out-Null } catch {}
+    }
 }
-
-# Apply un colore "neutro" cosi' Guido vede che il device e' finito
-foreach ($device in $devices) {
-    for ($j = 0; $j -lt $device.Lights.Count; $j++) {
-        $device.Lights[$j].Red   = $lime.R
-        $device.Lights[$j].Green = $lime.G
-        $device.Lights[$j].Blue  = $lime.B
-    }
-    $device.Apply()
-}
-
-# --- Salva JSON ---
-$out = [ordered]@{
-    version      = 1
-    device       = "Claymore II"
-    generated_by = "calibrate-claymore.ps1 ($(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))"
-    leds         = $ledMap
-}
-$json = $out | ConvertTo-Json -Depth 10
-Set-Content -Path $OutputPath -Value $json -Encoding UTF8
-
-Write-Host "`nKeymap saved to: $OutputPath" -ForegroundColor Green
-Write-Host "Total mapped LEDs: $($ledMap.Count)"
-
-$sdk.ReleaseControl(0)
-[System.Runtime.Interopservices.Marshal]::ReleaseComObject($sdk) | Out-Null
