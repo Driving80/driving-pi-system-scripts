@@ -68,14 +68,15 @@ $script:ClaymoreCyanCodes = @(
     181, 55, 74, 78,
     # Multimedia top-right (volume wheel + profile + extra)
     257, 258, 259,
-    # Italian punctuation accents (v4 live feedback)
+    # Italian punctuation accents (v4 live feedback + v6 \ correction)
     12,   # ' apostrofo (Y=1 X=12)
     13,   # i' (Y=1 X=13)
     26,   # e' (Y=2 X=12)
     27,   # + (Y=2 X=13)
     39,   # o' (Y=3 X=11)
     40,   # a' (Y=3 X=12)
-    43,   # u' or \ (Y=2 X=15)
+    41,   # \ backslash (Y=1 X=0 - Italian PC layout, NOT backtick come pensato) v6 2026-05-22
+    43,   # phantom slot (no LED fisico - probe live confermato), tenuto cyan per safety
     51,   # , (Y=4 X=9)
     52,   # . (Y=4 X=10)
     53    # - (Y=4 X=11)

@@ -126,9 +126,7 @@ Describe "Keys mapping (Code -> family lookup)" {
         79..83 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 1,2,3,0,.
     }
 
-    It "Letters + backtick return lime (post v5 - numbers 1-0 now magenta)" {
-        # Backtick stays lime
-        Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
+    It "Letters return lime (post v6 - code 41 is backslash NOT backtick, now cyan)" {
         # QWERTY letters only: codes 16-25 (Q-P)
         16..25 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
         # ASDF letters only: codes 30-38 (A-L)
@@ -141,7 +139,9 @@ Describe "Keys mapping (Code -> family lookup)" {
         2..11 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "magenta" }
     }
 
-    It "Italian punctuation accents return cyan (v4 2026-05-22)" {
+    It "Italian punctuation accents return cyan (v4+v6)" {
+        # Backslash (top-left, Italian PC layout) - v6 correction (was thought backtick)
+        Get-ClaymoreKeyFamily -Code 41 | Should Be "cyan"
         # Number row: ' (apostrofo), i'
         Get-ClaymoreKeyFamily -Code 12 | Should Be "cyan"
         Get-ClaymoreKeyFamily -Code 13 | Should Be "cyan"
@@ -151,7 +151,7 @@ Describe "Keys mapping (Code -> family lookup)" {
         # ASDF row: o', a'
         Get-ClaymoreKeyFamily -Code 39 | Should Be "cyan"
         Get-ClaymoreKeyFamily -Code 40 | Should Be "cyan"
-        # QWERTY end: u' / \
+        # Phantom slot (no physical LED), kept cyan for safety
         Get-ClaymoreKeyFamily -Code 43 | Should Be "cyan"
         # ZXCV punctuation: , . -
         Get-ClaymoreKeyFamily -Code 51 | Should Be "cyan"
