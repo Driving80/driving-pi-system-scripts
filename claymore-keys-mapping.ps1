@@ -22,9 +22,9 @@
 #
 # Compatibile PowerShell 5.1 e 7+. ASCII-only.
 
-# MAGENTA - modifiers/structural + arrows (21 keys)
-# Arrows promossi qui da LIME su feedback live 2026-05-22:
-# rompe l'uniformita' del blocco tra main keyboard e numpad.
+# MAGENTA - modifiers/structural + arrows + number row (31 keys)
+# v5 2026-05-22: numbers 1-0 (codes 2-11) -> magenta per visual separator
+# tra numpad numerici e tastiera principale.
 $script:ClaymoreMagentaCodes = @(
     # Left modifier column (colonna X=0, una per riga)
     1,    # ESC      (Y=0)
@@ -51,7 +51,9 @@ $script:ClaymoreMagentaCodes = @(
     200,  # Up
     203,  # Left
     205,  # Right
-    208   # Down
+    208,  # Down
+    # Number row 1-0 (v5 2026-05-22 - separator visivo)
+    2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 )
 
 # CYAN - commands/actions (35 keys)

@@ -124,9 +124,7 @@ Describe "Keys mapping (Code -> family lookup)" {
         79..83 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 1,2,3,0,.
     }
 
-    It "Letters + numbers + backtick return lime (post v4 - Italian punct accents now cyan)" {
-        # Number row letters (no punctuation): codes 2-11 (1-0)
-        2..11 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+    It "Letters + backtick return lime (post v5 - numbers 1-0 now magenta)" {
         # Backtick stays lime
         Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
         # QWERTY letters only: codes 16-25 (Q-P)
@@ -135,6 +133,10 @@ Describe "Keys mapping (Code -> family lookup)" {
         30..38 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
         # ZXCV letters only: codes 44-50 (Z-M)
         44..50 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+    }
+
+    It "Numbers 1-0 (codes 2-11) return magenta (v5 2026-05-22)" {
+        2..11 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "magenta" }
     }
 
     It "Italian punctuation accents return cyan (v4 2026-05-22)" {
