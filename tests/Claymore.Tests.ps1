@@ -47,22 +47,41 @@ Describe "Brand colors (drivingtech)" {
 
 Describe "Keys mapping (Code -> family lookup)" {
     It "Modifier codes return magenta" {
+        # Left modifier column (corrected 2026-05-22 post live probe)
+        Get-ClaymoreKeyFamily -Code 1   | Should Be "magenta"  # ESC
+        Get-ClaymoreKeyFamily -Code 15  | Should Be "magenta"  # Tab
+        Get-ClaymoreKeyFamily -Code 58  | Should Be "magenta"  # CapsLock
+        Get-ClaymoreKeyFamily -Code 42  | Should Be "magenta"  # LShift
+        Get-ClaymoreKeyFamily -Code 29  | Should Be "magenta"  # LCtrl
+        # Right modifier column
         Get-ClaymoreKeyFamily -Code 14  | Should Be "magenta"  # Backspace
-        Get-ClaymoreKeyFamily -Code 16  | Should Be "magenta"  # Tab
-        Get-ClaymoreKeyFamily -Code 28  | Should Be "magenta"  # Enter
-        Get-ClaymoreKeyFamily -Code 29  | Should Be "magenta"  # Left Ctrl
-        Get-ClaymoreKeyFamily -Code 30  | Should Be "magenta"  # CapsLock
-        Get-ClaymoreKeyFamily -Code 44  | Should Be "magenta"  # Left Shift
-        Get-ClaymoreKeyFamily -Code 54  | Should Be "magenta"  # Right Shift
-        Get-ClaymoreKeyFamily -Code 56  | Should Be "magenta"  # Left Alt
+        Get-ClaymoreKeyFamily -Code 28  | Should Be "magenta"  # Enter (main)
+        Get-ClaymoreKeyFamily -Code 54  | Should Be "magenta"  # RShift
+        Get-ClaymoreKeyFamily -Code 157 | Should Be "magenta"  # RCtrl
+        # Bottom row modifiers
+        Get-ClaymoreKeyFamily -Code 219 | Should Be "magenta"  # LWin
+        Get-ClaymoreKeyFamily -Code 56  | Should Be "magenta"  # LAlt
         Get-ClaymoreKeyFamily -Code 57  | Should Be "magenta"  # Spacebar
+        Get-ClaymoreKeyFamily -Code 184 | Should Be "magenta"  # RAlt
+        Get-ClaymoreKeyFamily -Code 256 | Should Be "magenta"  # Fn
+        Get-ClaymoreKeyFamily -Code 221 | Should Be "magenta"  # Menu
+        # Numpad modifier
         Get-ClaymoreKeyFamily -Code 69  | Should Be "magenta"  # NumLock
         Get-ClaymoreKeyFamily -Code 156 | Should Be "magenta"  # Numpad Enter
-        Get-ClaymoreKeyFamily -Code 157 | Should Be "magenta"  # Right Ctrl
-        Get-ClaymoreKeyFamily -Code 184 | Should Be "magenta"  # Right Alt
-        Get-ClaymoreKeyFamily -Code 219 | Should Be "magenta"  # Left Win
-        Get-ClaymoreKeyFamily -Code 221 | Should Be "magenta"  # Menu
-        Get-ClaymoreKeyFamily -Code 256 | Should Be "magenta"  # Fn
+    }
+
+    It "Letters Q/A/Z (codes 16/30/44) return lime (corrected from offset bug 2026-05-22)" {
+        # Live probe ha rivelato: codes 16/30/44 sono Q/A/Z (non Tab/Caps/LShift come pensavamo)
+        Get-ClaymoreKeyFamily -Code 16 | Should Be "lime"  # Q
+        Get-ClaymoreKeyFamily -Code 30 | Should Be "lime"  # A
+        Get-ClaymoreKeyFamily -Code 44 | Should Be "lime"  # Z
+        Get-ClaymoreKeyFamily -Code 17 | Should Be "lime"  # W
+        Get-ClaymoreKeyFamily -Code 31 | Should Be "lime"  # S
+        Get-ClaymoreKeyFamily -Code 45 | Should Be "lime"  # X
+    }
+
+    It "Backtick (code 41) returns lime (corrected: not M2 macro)" {
+        Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
     }
 
     It "Nav cluster codes return magenta (moved from cyan 2026-05-22)" {
@@ -78,14 +97,6 @@ Describe "Keys mapping (Code -> family lookup)" {
         59..68 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "cyan" }
         Get-ClaymoreKeyFamily -Code 87 | Should Be "cyan"  # F11
         Get-ClaymoreKeyFamily -Code 88 | Should Be "cyan"  # F12
-    }
-
-    It "Macro M1-M5 codes return cyan" {
-        Get-ClaymoreKeyFamily -Code 1  | Should Be "cyan"  # M1
-        Get-ClaymoreKeyFamily -Code 41 | Should Be "cyan"  # M2
-        Get-ClaymoreKeyFamily -Code 15 | Should Be "cyan"  # M3
-        Get-ClaymoreKeyFamily -Code 58 | Should Be "cyan"  # M4
-        Get-ClaymoreKeyFamily -Code 42 | Should Be "cyan"  # M5
     }
 
     It "System cluster codes return cyan (PrtSc/ScrLk/Pause stay cyan per feedback)" {
@@ -113,16 +124,16 @@ Describe "Keys mapping (Code -> family lookup)" {
         79..83 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 1,2,3,0,.
     }
 
-    It "Number row + letters + punctuation return lime" {
-        # Number row codes 2-13 (` 1 2 3 4 5 6 7 8 9 0 - =)
+    It "Number row + letters + punctuation return lime (post-correction 2026-05-22)" {
+        # Number row codes 2-13 (1-0 + Italian punctuation, ` is code 41)
         2..13 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
-        # QWERTY row codes 17-27 + 43 (\)
-        17..27 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # QWERTY row codes 16-27 (Q W E R T Y U I O P + Italian punct) + 43 (\)
+        16..27 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
         Get-ClaymoreKeyFamily -Code 43 | Should Be "lime"
-        # ASDF row codes 31-40
-        31..40 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
-        # ZXCV row codes 45-53
-        45..53 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # ASDF row codes 30-40 (A S D F G H J K L + Italian punct)
+        30..40 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # ZXCV row codes 44-53 (Z X C V B N M + Italian punct)
+        44..53 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
     }
 
     It "Multimedia top-right (257-259) return cyan" {
