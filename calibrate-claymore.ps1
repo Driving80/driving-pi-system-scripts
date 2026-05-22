@@ -63,7 +63,9 @@ try {
         Write-Host ("  Name={0}  Lights={1}  {2}x{3}" -f $d.Name, $d.Lights.Count, $d.Width, $d.Height)
     }
 
-    $mag   = Get-ClaymoreBrandColor "magenta"
+    # Target probe = WHITE (255,255,255): perceptual brightness ~100% vs magenta ~26%.
+    # Massima visibilita' per identificare i LED nella luce ambient normale.
+    $probe = @{ R = 255; G = 255; B = 255 }
     $lime  = Get-ClaymoreBrandColor "lime"
     $black = @{ R = 0; G = 0; B = 0 }
 
@@ -87,17 +89,17 @@ try {
                 $device.Lights[$j].Blue  = $black.B
             }
         }
-        # Accendi LED $i in MAGENTA su tutti gli endpoint (mirror)
+        # Accendi LED $i in WHITE BRIGHT su tutti gli endpoint (mirror) - max visibility
         foreach ($device in $devices) {
             if ($i -lt $device.Lights.Count) {
-                $device.Lights[$i].Red   = $mag.R
-                $device.Lights[$i].Green = $mag.G
-                $device.Lights[$i].Blue  = $mag.B
+                $device.Lights[$i].Red   = $probe.R
+                $device.Lights[$i].Green = $probe.G
+                $device.Lights[$i].Blue  = $probe.B
             }
         }
         foreach ($device in $devices) { $device.Apply() }
 
-        Write-Host -NoNewline "LED[$i] - famiglia? (l=lime c=cyan m=magenta s=skip q=quit) > "
+        Write-Host -NoNewline "LED[$i] - tasto WHITE acceso, famiglia? (l=lime c=cyan m=magenta s=skip q=quit) > "
         $response = Read-Host
         $response = $response.Trim().ToLowerInvariant()
 
