@@ -8,9 +8,11 @@ $repoRoot = Split-Path -Parent $here
 . (Join-Path $repoRoot "claymore-keys-mapping.ps1")
 
 Describe "Brand colors (drivingtech)" {
-    It "LIME is (212, 255, 0) verbatim brand" {
+    It "LIME is (160, 255, 0) LED-calibrated (deviated from screen brand #D4FF00)" {
+        # Screen brand = #D4FF00 (212,255,0); LED renders too yellow at that value.
+        # LED-calibrated #A0FF00 (160,255,0) matches the perceived acid-lime on hardware.
         $c = Get-ClaymoreBrandColor "lime"
-        $c.R | Should Be 212
+        $c.R | Should Be 160
         $c.G | Should Be 255
         $c.B | Should Be 0
     }
@@ -29,9 +31,9 @@ Describe "Brand colors (drivingtech)" {
         $c.B | Should Be 200
     }
 
-    It "Unknown family falls back to lime" {
+    It "Unknown family falls back to lime (LED-calibrated)" {
         $c = Get-ClaymoreBrandColor "purple"
-        $c.R | Should Be 212
+        $c.R | Should Be 160
         $c.G | Should Be 255
         $c.B | Should Be 0
     }
@@ -211,14 +213,14 @@ Describe "Brand layout apply (with mock SDK)" {
         $script:mockDevice = $mockDevice
     }
 
-    It "Set-DeviceBrandColors applies LIME to all Lights as background" {
+    It "Set-DeviceBrandColors applies LIME (LED-calibrated) to all Lights as background" {
         . (Join-Path $repoRoot "claymore-brand-layout.ps1")
         Set-DeviceBrandColors -Device $script:mockDevice
 
         $script:mockApplyCount | Should Be 1
         $script:mockLightsWritten.Count | Should Be 5
         foreach ($l in $script:mockLightsWritten) {
-            $l.R | Should Be 212  # lime
+            $l.R | Should Be 160  # LED-calibrated lime
             $l.G | Should Be 255
             $l.B | Should Be 0
         }
@@ -235,9 +237,9 @@ Describe "Brand layout apply (with mock SDK)" {
         $key14.R | Should Be 255
         $key14.G | Should Be 0
         $key14.B | Should Be 200
-        # Code 19 -> lime (212,255,0)
+        # Code 19 -> lime LED-calibrated (160,255,0)
         $key19 = $script:mockKeysWritten | Where-Object { $_.Code -eq 19 } | Select-Object -First 1
-        $key19.R | Should Be 212
+        $key19.R | Should Be 160
         $key19.G | Should Be 255
         $key19.B | Should Be 0
         # Code 59 -> cyan (0,229,255)
