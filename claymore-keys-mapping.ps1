@@ -54,10 +54,9 @@ $script:ClaymoreMagentaCodes = @(
     208   # Down
 )
 
-# CYAN - commands/actions (25 keys)
-# Nav cluster (Ins/Home/PgUp/Del/End/PgDn) rimesso in CYAN su feedback v3
-# 2026-05-22: il blocco a 3 colori (lime top + cyan nav + magenta arrows)
-# rompe meglio l'uniformita' rispetto al blocco tutto-lime.
+# CYAN - commands/actions (35 keys)
+# v4 2026-05-22: punteggiatura italiana (', ì, è, +, ò, à, ù, , . -) -> CYAN
+# per accent-color sui caratteri speciali italiani.
 $script:ClaymoreCyanCodes = @(
     # F-row F1-F12 (F1-F10 sequenziali 59-68, F11=87, F12=88)
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 87, 88,
@@ -66,7 +65,18 @@ $script:ClaymoreCyanCodes = @(
     # Numpad operators: /, *, -, +
     181, 55, 74, 78,
     # Multimedia top-right (volume wheel + profile + extra)
-    257, 258, 259
+    257, 258, 259,
+    # Italian punctuation accents (v4 live feedback)
+    12,   # ' apostrofo (Y=1 X=12)
+    13,   # i' (Y=1 X=13)
+    26,   # e' (Y=2 X=12)
+    27,   # + (Y=2 X=13)
+    39,   # o' (Y=3 X=11)
+    40,   # a' (Y=3 X=12)
+    43,   # u' or \ (Y=2 X=15)
+    51,   # , (Y=4 X=9)
+    52,   # . (Y=4 X=10)
+    53    # - (Y=4 X=11)
 )
 
 # Default LIME (62 keys) per esclusione:

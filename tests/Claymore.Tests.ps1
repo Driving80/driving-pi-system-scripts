@@ -124,16 +124,35 @@ Describe "Keys mapping (Code -> family lookup)" {
         79..83 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 1,2,3,0,.
     }
 
-    It "Number row + letters + punctuation return lime (post-correction 2026-05-22)" {
-        # Number row codes 2-13 (1-0 + Italian punctuation, ` is code 41)
-        2..13 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
-        # QWERTY row codes 16-27 (Q W E R T Y U I O P + Italian punct) + 43 (\)
-        16..27 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
-        Get-ClaymoreKeyFamily -Code 43 | Should Be "lime"
-        # ASDF row codes 30-40 (A S D F G H J K L + Italian punct)
-        30..40 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
-        # ZXCV row codes 44-53 (Z X C V B N M + Italian punct)
-        44..53 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+    It "Letters + numbers + backtick return lime (post v4 - Italian punct accents now cyan)" {
+        # Number row letters (no punctuation): codes 2-11 (1-0)
+        2..11 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # Backtick stays lime
+        Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
+        # QWERTY letters only: codes 16-25 (Q-P)
+        16..25 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # ASDF letters only: codes 30-38 (A-L)
+        30..38 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # ZXCV letters only: codes 44-50 (Z-M)
+        44..50 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+    }
+
+    It "Italian punctuation accents return cyan (v4 2026-05-22)" {
+        # Number row: ' (apostrofo), i'
+        Get-ClaymoreKeyFamily -Code 12 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 13 | Should Be "cyan"
+        # QWERTY row: e', +
+        Get-ClaymoreKeyFamily -Code 26 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 27 | Should Be "cyan"
+        # ASDF row: o', a'
+        Get-ClaymoreKeyFamily -Code 39 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 40 | Should Be "cyan"
+        # QWERTY end: u' / \
+        Get-ClaymoreKeyFamily -Code 43 | Should Be "cyan"
+        # ZXCV punctuation: , . -
+        Get-ClaymoreKeyFamily -Code 51 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 52 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 53 | Should Be "cyan"
     }
 
     It "Multimedia top-right (257-259) return cyan" {
