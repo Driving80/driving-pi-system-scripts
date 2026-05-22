@@ -84,13 +84,13 @@ Describe "Keys mapping (Code -> family lookup)" {
         Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
     }
 
-    It "Nav cluster codes return magenta (moved from cyan 2026-05-22)" {
-        Get-ClaymoreKeyFamily -Code 210 | Should Be "magenta"  # Ins
-        Get-ClaymoreKeyFamily -Code 211 | Should Be "magenta"  # Del
-        Get-ClaymoreKeyFamily -Code 199 | Should Be "magenta"  # Home
-        Get-ClaymoreKeyFamily -Code 207 | Should Be "magenta"  # End
-        Get-ClaymoreKeyFamily -Code 201 | Should Be "magenta"  # PgUp
-        Get-ClaymoreKeyFamily -Code 209 | Should Be "magenta"  # PgDn
+    It "Nav cluster codes return lime (block between main+numpad goes all lime 2026-05-22 v2)" {
+        Get-ClaymoreKeyFamily -Code 210 | Should Be "lime"  # Ins
+        Get-ClaymoreKeyFamily -Code 211 | Should Be "lime"  # Del
+        Get-ClaymoreKeyFamily -Code 199 | Should Be "lime"  # Home
+        Get-ClaymoreKeyFamily -Code 207 | Should Be "lime"  # End
+        Get-ClaymoreKeyFamily -Code 201 | Should Be "lime"  # PgUp
+        Get-ClaymoreKeyFamily -Code 209 | Should Be "lime"  # PgDn
     }
 
     It "F-row codes return cyan" {
@@ -99,17 +99,17 @@ Describe "Keys mapping (Code -> family lookup)" {
         Get-ClaymoreKeyFamily -Code 88 | Should Be "cyan"  # F12
     }
 
-    It "System cluster codes return cyan (PrtSc/ScrLk/Pause stay cyan per feedback)" {
-        Get-ClaymoreKeyFamily -Code 183 | Should Be "cyan"  # PrtSc
-        Get-ClaymoreKeyFamily -Code 70  | Should Be "cyan"  # ScrLk
-        Get-ClaymoreKeyFamily -Code 197 | Should Be "cyan"  # Pause
+    It "System cluster codes return lime (block above arrows -> lime 2026-05-22 v2)" {
+        Get-ClaymoreKeyFamily -Code 183 | Should Be "lime"  # PrtSc
+        Get-ClaymoreKeyFamily -Code 70  | Should Be "lime"  # ScrLk
+        Get-ClaymoreKeyFamily -Code 197 | Should Be "lime"  # Pause
     }
 
-    It "Arrow codes return lime (moved from cyan 2026-05-22 - treated as content navigation)" {
-        Get-ClaymoreKeyFamily -Code 200 | Should Be "lime"  # Up
-        Get-ClaymoreKeyFamily -Code 203 | Should Be "lime"  # Left
-        Get-ClaymoreKeyFamily -Code 205 | Should Be "lime"  # Right
-        Get-ClaymoreKeyFamily -Code 208 | Should Be "lime"  # Down
+    It "Arrow codes return magenta (moved from lime 2026-05-22 v2 to break uniformity)" {
+        Get-ClaymoreKeyFamily -Code 200 | Should Be "magenta"  # Up
+        Get-ClaymoreKeyFamily -Code 203 | Should Be "magenta"  # Left
+        Get-ClaymoreKeyFamily -Code 205 | Should Be "magenta"  # Right
+        Get-ClaymoreKeyFamily -Code 208 | Should Be "magenta"  # Down
     }
 
     It "Numpad operators return cyan; numpad numerics return lime" {

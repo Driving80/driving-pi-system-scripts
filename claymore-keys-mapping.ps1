@@ -22,7 +22,9 @@
 #
 # Compatibile PowerShell 5.1 e 7+. ASCII-only.
 
-# MAGENTA - modifiers/structural + nav cluster (23 keys)
+# MAGENTA - modifiers/structural + arrows (21 keys)
+# Arrows promossi qui da LIME su feedback live 2026-05-22:
+# rompe l'uniformita' del blocco tra main keyboard e numpad.
 $script:ClaymoreMagentaCodes = @(
     # Left modifier column (colonna X=0, una per riga)
     1,    # ESC      (Y=0)
@@ -45,16 +47,20 @@ $script:ClaymoreMagentaCodes = @(
     # Numpad modifiers
     69,   # NumLock
     156,  # Numpad Enter
-    # Nav cluster (Ins/Del/Home/End/PgUp/PgDn)
-    210, 211, 199, 207, 201, 209
+    # Arrows (moved from LIME 2026-05-22 feedback)
+    200,  # Up
+    203,  # Left
+    205,  # Right
+    208   # Down
 )
 
-# CYAN - commands/actions (22 keys)
+# CYAN - commands/actions (19 keys)
+# System cluster (PrtSc/ScrLk/Pausa) e nav cluster (Ins/Del/Home/End/PgUp/PgDn)
+# rimossi qui su feedback live 2026-05-22: il blocco tra main keyboard e numpad
+# va tutto LIME per contrasto con le frecce magenta.
 $script:ClaymoreCyanCodes = @(
     # F-row F1-F12 (F1-F10 sequenziali 59-68, F11=87, F12=88)
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 87, 88,
-    # System cluster: PrtSc, ScrLk, Pause
-    183, 70, 197,
     # Numpad operators: /, *, -, +
     181, 55, 74, 78,
     # Multimedia top-right (volume wheel + profile + extra)
