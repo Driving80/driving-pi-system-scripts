@@ -76,3 +76,67 @@ Describe "Keymap loader" {
         { Import-ClaymoreKeymap -Path "C:\does\not\exist.json" } | Should Throw "Keymap file not found"
     }
 }
+
+Describe "Brand layout apply (with mock SDK)" {
+    BeforeEach {
+        # Crea mock device con Lights collection
+        $script:mockLightsApplied = @()
+        $mockDevice = New-Object PSObject -Property @{
+            Name        = "MA02"
+            Lights      = @()
+            ApplyCalled = $false
+        }
+        # 5 LED mock
+        for ($i = 0; $i -lt 5; $i++) {
+            $mockLight = New-Object PSObject -Property @{
+                Red = 0; Green = 0; Blue = 0; Index = $i
+            }
+            $mockDevice.Lights += $mockLight
+        }
+        Add-Member -InputObject $mockDevice -MemberType ScriptMethod -Name Apply -Value {
+            $this.ApplyCalled = $true
+            for ($i = 0; $i -lt $this.Lights.Count; $i++) {
+                $script:mockLightsApplied += @{
+                    Index = $i
+                    R = $this.Lights[$i].Red
+                    G = $this.Lights[$i].Green
+                    B = $this.Lights[$i].Blue
+                }
+            }
+        } -Force
+        $script:mockDevice = $mockDevice
+    }
+
+    It "Set-DeviceColors applica i colori secondo keymap (usa fixture stabile, non keymap di produzione)" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $keymap = Import-ClaymoreKeymap -Path (Join-Path $here "fixtures\sample-keymap.json")
+        Set-DeviceColors -Device $script:mockDevice -Keymap $keymap
+
+        $script:mockDevice.ApplyCalled | Should Be $true
+        $script:mockLightsApplied.Count | Should Be 5
+        # Fixture: LED 0=magenta, 1=cyan, 2=cyan, 3=lime, 4=missing (fallback lime)
+        $script:mockLightsApplied[0].R | Should Be 255  # magenta
+        $script:mockLightsApplied[0].G | Should Be 0
+        $script:mockLightsApplied[0].B | Should Be 200
+        $script:mockLightsApplied[1].R | Should Be 0    # cyan
+        $script:mockLightsApplied[3].R | Should Be 212  # lime
+        $script:mockLightsApplied[4].R | Should Be 212  # fallback lime
+    }
+
+    It "Set-DeviceColors usa LIME come fallback per LED non mappati" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $emptyKeymap = [PSCustomObject]@{
+            version = 1
+            device  = "Claymore II"
+            leds    = @{}  # nessun LED mappato
+        }
+        Set-DeviceColors -Device $script:mockDevice -Keymap $emptyKeymap
+
+        # Tutti i 5 LED dovrebbero essere LIME
+        foreach ($applied in $script:mockLightsApplied) {
+            $applied.R | Should Be 212
+            $applied.G | Should Be 255
+            $applied.B | Should Be 0
+        }
+    }
+}
