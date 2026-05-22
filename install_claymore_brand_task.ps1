@@ -111,11 +111,15 @@ $xml = @"
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
     <WakeToRun>false</WakeToRun>
     <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <RestartOnFailure>
+      <Interval>PT1M</Interval>
+      <Count>5</Count>
+    </RestartOnFailure>
   </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>$pwshExe</Command>
-      <Arguments>-NoProfile -ExecutionPolicy Bypass -File "$ScriptPath"</Arguments>
+      <Arguments>-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$ScriptPath"</Arguments>
       <WorkingDirectory>$(Split-Path -Parent $ScriptPath)</WorkingDirectory>
     </Exec>
   </Actions>
@@ -136,5 +140,5 @@ try {
     Remove-Item $xmlPath -ErrorAction SilentlyContinue
 }
 
-Write-Host "Task '$TaskName' installed. Triggers: At-logon + On-wake (Power-Troubleshooter ID 1)." -ForegroundColor Green
+Write-Host "Task '$TaskName' installed. Triggers: At-logon + On-wake (Power-Troubleshooter ID 1). RestartOnFailure: 5x @ PT1M. WindowStyle Hidden." -ForegroundColor Green
 Write-Host "Test manual run: schtasks /run /tn $TaskName"
