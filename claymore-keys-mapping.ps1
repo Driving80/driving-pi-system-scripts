@@ -89,6 +89,18 @@ $script:ClaymoreCyanCodes = @(
 #   - ZXCV row:   44-53 (Z-/ + Italian punct)
 #   - Numpad numeric: 71-73, 75-77, 79-83 (e decimal)
 #   - Arrows: 200, 203, 205, 208 (Up, Left, Right, Down)
+#
+# LIMITAZIONE NOTA (2026-05-22 dopo brute-force probe):
+# Il tasto 'u' italiano ha un LED che risponde al "set all Lights[]" del daemon
+# (mostra lime di sfondo) ma il suo indice non e' addressable individualmente
+# - ne' tramite .Keys[code] (non enumerato in nessuno dei 107 codes), ne'
+# tramite .Lights[index] (non emerge in nessun probe singolo dei 75 unmapped
+# Lights). E' un quirk firmware-level della Claymore II Italian: il LED esiste
+# fisicamente ma il SDK non lo espone per scritture mirate. Accettata come
+# limitazione: 'u' resta LIME background, non puo' essere portata in CYAN.
+#
+# Stesso vale per '<' (tasto ISO key tra LShift e Z): questa Claymore II e'
+# ANSI 104-key, '<' non esiste fisicamente. Combo software AltGr+qualcosa.
 
 function Get-ClaymoreKeyFamily {
     param([Parameter(Mandatory=$true)][int]$Code)
