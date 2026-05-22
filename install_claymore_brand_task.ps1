@@ -36,8 +36,16 @@ Write-Host ""
 # --- Uninstall ---
 if ($Uninstall) {
     Write-Host "Uninstalling..." -ForegroundColor Yellow
-    schtasks /delete /tn $TaskName /f
-    Write-Host "Done."
+    $deleteExit = & {
+        $ErrorActionPreference = "SilentlyContinue"
+        schtasks /delete /tn $TaskName /f 2>$null | Out-Null
+        return $LASTEXITCODE
+    }
+    if ($deleteExit -eq 0) {
+        Write-Host "Done."
+    } else {
+        Write-Host "Task '$TaskName' not found (already uninstalled). Done." -ForegroundColor DarkGray
+    }
     exit 0
 }
 
@@ -47,8 +55,14 @@ if (-not (Test-Path $ScriptPath)) {
 }
 
 # --- Cleanup vecchia istanza (idempotenza) ---
-schtasks /query /tn $TaskName 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
+# Scope EAP locale: schtasks /query stderr quando task non esiste e' atteso
+# (PowerShell 7+ con ErrorActionPreference=Stop lo trattava come terminante).
+$queryExit = & {
+    $ErrorActionPreference = "SilentlyContinue"
+    schtasks /query /tn $TaskName 2>$null | Out-Null
+    return $LASTEXITCODE
+}
+if ($queryExit -eq 0) {
     Write-Host "Existing task found, deleting..." -ForegroundColor Yellow
     schtasks /delete /tn $TaskName /f | Out-Null
 }
