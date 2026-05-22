@@ -17,6 +17,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- Verifica elevazione admin (richiesta da schtasks /create) ---
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw "This script must be run as Administrator. Re-launch PowerShell with 'Run as administrator' and try again."
+}
+
 if (-not $ScriptPath) {
     $ScriptPath = Join-Path $PSScriptRoot "claymore-brand-layout.ps1"
 }
@@ -102,15 +108,19 @@ $xml = @"
 </Task>
 "@
 
-Set-Content -Path $xmlPath -Value $xml -Encoding Unicode
+try {
+    Set-Content -Path $xmlPath -Value $xml -Encoding Unicode
 
-# --- Registra task ---
-Write-Host "Registering task..." -ForegroundColor Yellow
-schtasks /create /tn $TaskName /xml $xmlPath /f
-if ($LASTEXITCODE -ne 0) {
-    throw "schtasks create failed with exit $LASTEXITCODE"
+    # --- Registra task ---
+    Write-Host "Registering task..." -ForegroundColor Yellow
+    schtasks /create /tn $TaskName /xml $xmlPath /f
+    if ($LASTEXITCODE -ne 0) {
+        throw "schtasks create failed with exit $LASTEXITCODE"
+    }
+} finally {
+    # Cleanup XML temp anche su exception (disk full, schtasks fail, ecc)
+    Remove-Item $xmlPath -ErrorAction SilentlyContinue
 }
 
-Remove-Item $xmlPath -ErrorAction SilentlyContinue
 Write-Host "Task '$TaskName' installed. Triggers: At-logon + On-wake (Power-Troubleshooter ID 1)." -ForegroundColor Green
 Write-Host "Test manual run: schtasks /run /tn $TaskName"
