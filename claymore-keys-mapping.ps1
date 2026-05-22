@@ -12,7 +12,9 @@
 #
 # Compatibile PowerShell 5.1 e 7+. ASCII-only.
 
-# MAGENTA - modifiers/structural (16 keys)
+# MAGENTA - modifiers/structural + nav cluster (22 keys)
+# Nav cluster spostato qui da CYAN su feedback live 2026-05-22:
+# Ins/Del/Home/End/PgUp/PgDn sono "navigazione strutturale" piu' che "comando".
 $script:ClaymoreMagentaCodes = @(
     14,   # Backspace
     16,   # Tab
@@ -29,10 +31,18 @@ $script:ClaymoreMagentaCodes = @(
     184,  # Right Alt
     219,  # Left Win
     221,  # Menu (context)
-    256   # Fn
+    256,  # Fn
+    # Nav cluster (moved from CYAN 2026-05-22)
+    210,  # Ins
+    211,  # Del
+    199,  # Home
+    207,  # End
+    201,  # PgUp
+    209   # PgDn
 )
 
-# CYAN - commands/actions (37 keys)
+# CYAN - commands/actions (27 keys)
+# Arrows rimossi da qui su feedback live 2026-05-22 (vanno in LIME come default).
 $script:ClaymoreCyanCodes = @(
     # Macros M1-M5 (M1=1, M2=41, M3=15, M4=58, M5=42)
     1, 15, 41, 42, 58,
@@ -40,10 +50,6 @@ $script:ClaymoreCyanCodes = @(
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 87, 88,
     # System cluster: PrtSc, ScrLk, Pause
     183, 70, 197,
-    # Nav cluster: Ins, Del, Home, End, PgUp, PgDn
-    210, 211, 199, 207, 201, 209,
-    # Arrows: Up, Down, Left, Right
-    200, 208, 203, 205,
     # Numpad operators: /, *, -, +
     181, 55, 74, 78,
     # Multimedia top-right (volume wheel + profile)
