@@ -46,11 +46,21 @@ if (-not (Test-Path $ScriptPath)) {
     throw "Script non trovato: $ScriptPath"
 }
 
-# Determina powershell.exe da usare. Prefer pwsh.exe (7+), fallback a Windows PowerShell 5.1.
-$powershell = (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Path
-if (-not $powershell) {
-    $powershell = (Get-Command powershell.exe).Path
+# Determina powershell.exe da usare. Prefer pwsh.exe (7+) REAL path (NOT
+# WindowsApps alias che fallisce in LocalSystem context), fallback a
+# Windows PowerShell 5.1 classico in System32.
+function Get-RealPowerShell {
+    $candidates = @(
+        "$env:ProgramFiles\PowerShell\7\pwsh.exe",
+        "${env:ProgramFiles(x86)}\PowerShell\7\pwsh.exe",
+        "$env:ProgramFiles\PowerShell\6\pwsh.exe"
+    )
+    foreach ($p in $candidates) {
+        if (Test-Path $p) { return $p }
+    }
+    return "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
 }
+$powershell = Get-RealPowerShell
 Write-Host "Using PowerShell: $powershell" -ForegroundColor Cyan
 
 # Prepara dir log
@@ -58,14 +68,18 @@ if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 }
 
-# Stop + rimuovi servizio esistente se presente (idempotenza)
+# Stop + rimuovi servizio esistente se presente (idempotenza).
+# Importante: nssm scrive avvisi su stderr quando il servizio e' gia' stopped;
+# con $ErrorActionPreference="Stop" questi avvisi terminano lo script.
+# Cattura via try/catch + redirect stderr a $null per essere robusti.
 $existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if ($existing) {
     Write-Host "Stopping existing service $ServiceName..." -ForegroundColor Yellow
-    & $nssm stop $ServiceName 2>&1 | Out-Null
+    try { & $nssm stop $ServiceName 2>$null | Out-Null } catch {}
     Start-Sleep -Seconds 2
     Write-Host "Removing existing service $ServiceName..." -ForegroundColor Yellow
-    & $nssm remove $ServiceName confirm 2>&1 | Out-Null
+    try { & $nssm remove $ServiceName confirm 2>$null | Out-Null } catch {}
+    Start-Sleep -Seconds 1
 }
 
 # Install

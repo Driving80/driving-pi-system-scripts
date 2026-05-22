@@ -32,11 +32,21 @@ if (-not (Test-Path $ScriptPath)) {
     throw "Script non trovato: $ScriptPath"
 }
 
-# Determina PowerShell host
-$powershell = (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Path
-if (-not $powershell) {
-    $powershell = (Get-Command powershell.exe).Path
+# Determina PowerShell host. Prefer pwsh.exe (7+) REAL path (NOT
+# WindowsApps alias che non funziona in SYSTEM principal), fallback a
+# Windows PowerShell 5.1 classico in System32.
+function Get-RealPowerShell {
+    $candidates = @(
+        "$env:ProgramFiles\PowerShell\7\pwsh.exe",
+        "${env:ProgramFiles(x86)}\PowerShell\7\pwsh.exe",
+        "$env:ProgramFiles\PowerShell\6\pwsh.exe"
+    )
+    foreach ($p in $candidates) {
+        if (Test-Path $p) { return $p }
+    }
+    return "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
 }
+$powershell = Get-RealPowerShell
 Write-Host "Using PowerShell: $powershell" -ForegroundColor Cyan
 
 # Rimuovi task esistente (idempotenza)
