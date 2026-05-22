@@ -82,8 +82,8 @@ Describe "Keys mapping (Code -> family lookup)" {
         Get-ClaymoreKeyFamily -Code 45 | Should Be "lime"  # X
     }
 
-    It "Backtick (code 41) returns lime (corrected: not M2 macro)" {
-        Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
+    It "Code 41 returns cyan (Italian PC layout: backslash NOT backtick) v6" {
+        Get-ClaymoreKeyFamily -Code 41 | Should Be "cyan"
     }
 
     It "Nav cluster codes return cyan (v3: lime system + cyan nav + magenta arrows = 3-color block)" {
