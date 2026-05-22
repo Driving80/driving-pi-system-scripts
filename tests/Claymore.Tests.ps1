@@ -84,13 +84,13 @@ Describe "Keys mapping (Code -> family lookup)" {
         Get-ClaymoreKeyFamily -Code 41 | Should Be "lime"
     }
 
-    It "Nav cluster codes return lime (block between main+numpad goes all lime 2026-05-22 v2)" {
-        Get-ClaymoreKeyFamily -Code 210 | Should Be "lime"  # Ins
-        Get-ClaymoreKeyFamily -Code 211 | Should Be "lime"  # Del
-        Get-ClaymoreKeyFamily -Code 199 | Should Be "lime"  # Home
-        Get-ClaymoreKeyFamily -Code 207 | Should Be "lime"  # End
-        Get-ClaymoreKeyFamily -Code 201 | Should Be "lime"  # PgUp
-        Get-ClaymoreKeyFamily -Code 209 | Should Be "lime"  # PgDn
+    It "Nav cluster codes return cyan (v3: lime system + cyan nav + magenta arrows = 3-color block)" {
+        Get-ClaymoreKeyFamily -Code 210 | Should Be "cyan"  # Ins
+        Get-ClaymoreKeyFamily -Code 211 | Should Be "cyan"  # Del
+        Get-ClaymoreKeyFamily -Code 199 | Should Be "cyan"  # Home
+        Get-ClaymoreKeyFamily -Code 207 | Should Be "cyan"  # End
+        Get-ClaymoreKeyFamily -Code 201 | Should Be "cyan"  # PgUp
+        Get-ClaymoreKeyFamily -Code 209 | Should Be "cyan"  # PgDn
     }
 
     It "F-row codes return cyan" {

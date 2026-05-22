@@ -54,13 +54,15 @@ $script:ClaymoreMagentaCodes = @(
     208   # Down
 )
 
-# CYAN - commands/actions (19 keys)
-# System cluster (PrtSc/ScrLk/Pausa) e nav cluster (Ins/Del/Home/End/PgUp/PgDn)
-# rimossi qui su feedback live 2026-05-22: il blocco tra main keyboard e numpad
-# va tutto LIME per contrasto con le frecce magenta.
+# CYAN - commands/actions (25 keys)
+# Nav cluster (Ins/Home/PgUp/Del/End/PgDn) rimesso in CYAN su feedback v3
+# 2026-05-22: il blocco a 3 colori (lime top + cyan nav + magenta arrows)
+# rompe meglio l'uniformita' rispetto al blocco tutto-lime.
 $script:ClaymoreCyanCodes = @(
     # F-row F1-F12 (F1-F10 sequenziali 59-68, F11=87, F12=88)
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 87, 88,
+    # Nav cluster (Ins/Del/Home/End/PgUp/PgDn) - cyan
+    210, 211, 199, 207, 201, 209,
     # Numpad operators: /, *, -, +
     181, 55, 74, 78,
     # Multimedia top-right (volume wheel + profile + extra)
