@@ -5,6 +5,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $here
 . (Join-Path $repoRoot "claymore-brand-colors.ps1")
+. (Join-Path $repoRoot "claymore-keys-mapping.ps1")
 
 Describe "Brand colors (drivingtech)" {
     It "LIME is (212, 255, 0) verbatim brand" {
@@ -44,99 +45,170 @@ Describe "Brand colors (drivingtech)" {
     }
 }
 
-. (Join-Path $repoRoot "claymore-keymap-loader.ps1")
-
-Describe "Keymap loader" {
-    $fixturePath = Join-Path $here "fixtures\sample-keymap.json"
-
-    It "Carica e parse JSON valido senza errore" {
-        $km = Import-ClaymoreKeymap -Path $fixturePath
-        $km | Should Not BeNullOrEmpty
+Describe "Keys mapping (Code -> family lookup)" {
+    It "Modifier codes return magenta" {
+        Get-ClaymoreKeyFamily -Code 14  | Should Be "magenta"  # Backspace
+        Get-ClaymoreKeyFamily -Code 16  | Should Be "magenta"  # Tab
+        Get-ClaymoreKeyFamily -Code 28  | Should Be "magenta"  # Enter
+        Get-ClaymoreKeyFamily -Code 29  | Should Be "magenta"  # Left Ctrl
+        Get-ClaymoreKeyFamily -Code 30  | Should Be "magenta"  # CapsLock
+        Get-ClaymoreKeyFamily -Code 44  | Should Be "magenta"  # Left Shift
+        Get-ClaymoreKeyFamily -Code 54  | Should Be "magenta"  # Right Shift
+        Get-ClaymoreKeyFamily -Code 56  | Should Be "magenta"  # Left Alt
+        Get-ClaymoreKeyFamily -Code 57  | Should Be "magenta"  # Spacebar
+        Get-ClaymoreKeyFamily -Code 69  | Should Be "magenta"  # NumLock
+        Get-ClaymoreKeyFamily -Code 156 | Should Be "magenta"  # Numpad Enter
+        Get-ClaymoreKeyFamily -Code 157 | Should Be "magenta"  # Right Ctrl
+        Get-ClaymoreKeyFamily -Code 184 | Should Be "magenta"  # Right Alt
+        Get-ClaymoreKeyFamily -Code 219 | Should Be "magenta"  # Left Win
+        Get-ClaymoreKeyFamily -Code 221 | Should Be "magenta"  # Menu
+        Get-ClaymoreKeyFamily -Code 256 | Should Be "magenta"  # Fn
     }
 
-    It "Espone .leds come hashtable con LED index (stringa) come chiave" {
-        $km = Import-ClaymoreKeymap -Path $fixturePath
-        $km.leds.ContainsKey("0") | Should Be $true
-        $km.leds.Count | Should Be 4
+    It "F-row codes return cyan" {
+        59..68 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "cyan" }
+        Get-ClaymoreKeyFamily -Code 87 | Should Be "cyan"  # F11
+        Get-ClaymoreKeyFamily -Code 88 | Should Be "cyan"  # F12
     }
 
-    It "Get-LedFamily restituisce family corretta per LED noto nella fixture" {
-        $km = Import-ClaymoreKeymap -Path $fixturePath
-        Get-LedFamily -Keymap $km -LedIndex 0 | Should Be "magenta"
-        Get-LedFamily -Keymap $km -LedIndex 1 | Should Be "cyan"
-        Get-LedFamily -Keymap $km -LedIndex 3 | Should Be "lime"
+    It "Macro M1-M5 codes return cyan" {
+        Get-ClaymoreKeyFamily -Code 1  | Should Be "cyan"  # M1
+        Get-ClaymoreKeyFamily -Code 41 | Should Be "cyan"  # M2
+        Get-ClaymoreKeyFamily -Code 15 | Should Be "cyan"  # M3
+        Get-ClaymoreKeyFamily -Code 58 | Should Be "cyan"  # M4
+        Get-ClaymoreKeyFamily -Code 42 | Should Be "cyan"  # M5
     }
 
-    It "Get-LedFamily fa fallback su lime per LED non mappato" {
-        $km = Import-ClaymoreKeymap -Path $fixturePath
-        Get-LedFamily -Keymap $km -LedIndex 99999 | Should Be "lime"
+    It "Arrows + nav cluster + system cluster return cyan" {
+        # Arrows
+        Get-ClaymoreKeyFamily -Code 200 | Should Be "cyan"  # Up
+        Get-ClaymoreKeyFamily -Code 203 | Should Be "cyan"  # Left
+        Get-ClaymoreKeyFamily -Code 205 | Should Be "cyan"  # Right
+        Get-ClaymoreKeyFamily -Code 208 | Should Be "cyan"  # Down
+        # Nav
+        Get-ClaymoreKeyFamily -Code 210 | Should Be "cyan"  # Ins
+        Get-ClaymoreKeyFamily -Code 211 | Should Be "cyan"  # Del
+        Get-ClaymoreKeyFamily -Code 199 | Should Be "cyan"  # Home
+        Get-ClaymoreKeyFamily -Code 207 | Should Be "cyan"  # End
+        Get-ClaymoreKeyFamily -Code 201 | Should Be "cyan"  # PgUp
+        Get-ClaymoreKeyFamily -Code 209 | Should Be "cyan"  # PgDn
+        # System
+        Get-ClaymoreKeyFamily -Code 183 | Should Be "cyan"  # PrtSc
+        Get-ClaymoreKeyFamily -Code 70  | Should Be "cyan"  # ScrLk
+        Get-ClaymoreKeyFamily -Code 197 | Should Be "cyan"  # Pause
     }
 
-    It "Solleva errore se file inesistente" {
-        { Import-ClaymoreKeymap -Path "C:\does\not\exist.json" } | Should Throw "Keymap file not found"
+    It "Numpad operators return cyan; numpad numerics return lime" {
+        # Operators
+        Get-ClaymoreKeyFamily -Code 181 | Should Be "cyan"  # /
+        Get-ClaymoreKeyFamily -Code 55  | Should Be "cyan"  # *
+        Get-ClaymoreKeyFamily -Code 74  | Should Be "cyan"  # -
+        Get-ClaymoreKeyFamily -Code 78  | Should Be "cyan"  # +
+        # Numerics
+        71..73 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 7,8,9
+        75..77 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 4,5,6
+        79..83 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }  # 1,2,3,0,.
+    }
+
+    It "Number row + letters + punctuation return lime" {
+        # Number row codes 2-13 (` 1 2 3 4 5 6 7 8 9 0 - =)
+        2..13 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # QWERTY row codes 17-27 + 43 (\)
+        17..27 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        Get-ClaymoreKeyFamily -Code 43 | Should Be "lime"
+        # ASDF row codes 31-40
+        31..40 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+        # ZXCV row codes 45-53
+        45..53 | ForEach-Object { Get-ClaymoreKeyFamily -Code $_ | Should Be "lime" }
+    }
+
+    It "Multimedia top-right (257-259) return cyan" {
+        Get-ClaymoreKeyFamily -Code 257 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 258 | Should Be "cyan"
+        Get-ClaymoreKeyFamily -Code 259 | Should Be "cyan"
+    }
+
+    It "Unknown code falls back to lime" {
+        Get-ClaymoreKeyFamily -Code 9999 | Should Be "lime"
+        Get-ClaymoreKeyFamily -Code 0    | Should Be "lime"
     }
 }
 
 Describe "Brand layout apply (with mock SDK)" {
     BeforeEach {
-        # Crea mock device con Lights collection
-        $script:mockLightsApplied = @()
+        $script:mockApplyCount = 0
+        $script:mockKeysWritten = @()
+        $script:mockLightsWritten = @()
+
         $mockDevice = New-Object PSObject -Property @{
-            Name        = "MA02"
-            Lights      = @()
-            ApplyCalled = $false
+            Name = "MA02"
+            Keys = @()
+            Lights = @()
         }
-        # 5 LED mock
+        # 3 mock Keys con vari Code: 14 (Bksp=magenta), 19 (E=lime), 59 (F1=cyan)
+        $mockKeyCodes = @(14, 19, 59)
+        foreach ($code in $mockKeyCodes) {
+            $mockKey = New-Object PSObject -Property @{
+                Code = $code; Red = 0; Green = 0; Blue = 0
+            }
+            $mockDevice.Keys += $mockKey
+        }
+        # 5 mock Lights (per il background fallback)
         for ($i = 0; $i -lt 5; $i++) {
             $mockLight = New-Object PSObject -Property @{
-                Red = 0; Green = 0; Blue = 0; Index = $i
+                Red = 0; Green = 0; Blue = 0
             }
             $mockDevice.Lights += $mockLight
         }
         Add-Member -InputObject $mockDevice -MemberType ScriptMethod -Name Apply -Value {
-            $this.ApplyCalled = $true
+            $script:mockApplyCount++
             for ($i = 0; $i -lt $this.Lights.Count; $i++) {
-                $script:mockLightsApplied += @{
-                    Index = $i
-                    R = $this.Lights[$i].Red
-                    G = $this.Lights[$i].Green
-                    B = $this.Lights[$i].Blue
+                $script:mockLightsWritten += @{
+                    Index = $i; R = $this.Lights[$i].Red; G = $this.Lights[$i].Green; B = $this.Lights[$i].Blue
+                }
+            }
+            for ($i = 0; $i -lt $this.Keys.Count; $i++) {
+                $script:mockKeysWritten += @{
+                    Code = $this.Keys[$i].Code; R = $this.Keys[$i].Red; G = $this.Keys[$i].Green; B = $this.Keys[$i].Blue
                 }
             }
         } -Force
         $script:mockDevice = $mockDevice
     }
 
-    It "Set-DeviceColors applica i colori secondo keymap (usa fixture stabile, non keymap di produzione)" {
+    It "Set-DeviceBrandColors applies LIME to all Lights as background" {
         . (Join-Path $repoRoot "claymore-brand-layout.ps1")
-        $keymap = Import-ClaymoreKeymap -Path (Join-Path $here "fixtures\sample-keymap.json")
-        Set-DeviceColors -Device $script:mockDevice -Keymap $keymap
+        Set-DeviceBrandColors -Device $script:mockDevice
 
-        $script:mockDevice.ApplyCalled | Should Be $true
-        $script:mockLightsApplied.Count | Should Be 5
-        # Fixture: LED 0=magenta, 1=cyan, 2=cyan, 3=lime, 4=missing (fallback lime)
-        $script:mockLightsApplied[0].R | Should Be 255  # magenta
-        $script:mockLightsApplied[0].G | Should Be 0
-        $script:mockLightsApplied[0].B | Should Be 200
-        $script:mockLightsApplied[1].R | Should Be 0    # cyan
-        $script:mockLightsApplied[3].R | Should Be 212  # lime
-        $script:mockLightsApplied[4].R | Should Be 212  # fallback lime
+        $script:mockApplyCount | Should Be 1
+        $script:mockLightsWritten.Count | Should Be 5
+        foreach ($l in $script:mockLightsWritten) {
+            $l.R | Should Be 212  # lime
+            $l.G | Should Be 255
+            $l.B | Should Be 0
+        }
     }
 
-    It "Set-DeviceColors usa LIME come fallback per LED non mappati" {
+    It "Set-DeviceBrandColors applies family colors to Keys by Code lookup" {
         . (Join-Path $repoRoot "claymore-brand-layout.ps1")
-        $emptyKeymap = [PSCustomObject]@{
-            version = 1
-            device  = "Claymore II"
-            leds    = @{}  # nessun LED mappato
-        }
-        Set-DeviceColors -Device $script:mockDevice -Keymap $emptyKeymap
+        Set-DeviceBrandColors -Device $script:mockDevice
 
-        # Tutti i 5 LED dovrebbero essere LIME
-        foreach ($applied in $script:mockLightsApplied) {
-            $applied.R | Should Be 212
-            $applied.G | Should Be 255
-            $applied.B | Should Be 0
-        }
+        # mock Keys: code 14 (Bksp=magenta), code 19 (E=lime), code 59 (F1=cyan)
+        $script:mockKeysWritten.Count | Should Be 3
+        # Code 14 -> magenta (255,0,200)
+        $key14 = $script:mockKeysWritten | Where-Object { $_.Code -eq 14 } | Select-Object -First 1
+        $key14.R | Should Be 255
+        $key14.G | Should Be 0
+        $key14.B | Should Be 200
+        # Code 19 -> lime (212,255,0)
+        $key19 = $script:mockKeysWritten | Where-Object { $_.Code -eq 19 } | Select-Object -First 1
+        $key19.R | Should Be 212
+        $key19.G | Should Be 255
+        $key19.B | Should Be 0
+        # Code 59 -> cyan (0,229,255)
+        $key59 = $script:mockKeysWritten | Where-Object { $_.Code -eq 59 } | Select-Object -First 1
+        $key59.R | Should Be 0
+        $key59.G | Should Be 229
+        $key59.B | Should Be 255
     }
 }

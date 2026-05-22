@@ -1,10 +1,12 @@
 # claymore-brand-layout.ps1 - Long-running daemon che mantiene il brand layout
-# drivingtech sulla Claymore II.
+# drivingtech sulla Claymore II via mapping deterministic Code -> family.
 #
-# Architettura daemon (post 2026-05-22 discovery):
+# Architettura (post 2026-05-22 deterministic pivot):
+#   - Mapping deterministic via Aura SDK .Keys collection (107 phys keys) +
+#     lookup Code -> family (claymore-keys-mapping.ps1). Zero calibrazione visiva.
 #   - Acquisisce SDK control + SwitchMode + Apply iniziale UNA VOLTA
 #   - Entra in loop infinito: sleep N sec, re-Apply idempotente, ripeti
-#   - MAI chiama ReleaseControl (chiamarlo resetterebbe LED a default Armoury Crate)
+#   - MAI ReleaseControl (chiamarlo resetterebbe LED a default Armoury Crate)
 #   - SDK rilasciato automaticamente alla terminazione del processo (logoff / kill)
 #
 # Eseguito da:
@@ -22,7 +24,6 @@
 # Compatibile PowerShell 5.1 e 7+. ASCII-only.
 
 param(
-    [string]$KeymapPath = (Join-Path $PSScriptRoot "claymore-brand-keymap.json"),
     [string]$LogPath    = (Join-Path $env:TEMP "claymore-brand-layout.log"),
     [int]$ReapplyIntervalSec = 10,
     [int]$RetryCount    = 3,
@@ -31,7 +32,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "claymore-brand-colors.ps1")
-. (Join-Path $PSScriptRoot "claymore-keymap-loader.ps1")
+. (Join-Path $PSScriptRoot "claymore-keys-mapping.ps1")
 
 function Write-Log {
     param([string]$Level, [string]$Message)
@@ -40,26 +41,34 @@ function Write-Log {
     Write-Host $line
 }
 
-function Set-DeviceColors {
-    param(
-        [Parameter(Mandatory=$true)]$Device,
-        [Parameter(Mandatory=$true)]$Keymap
-    )
+function Set-DeviceBrandColors {
+    param([Parameter(Mandatory=$true)]$Device)
 
+    # 1. Background fallback: set ALL 182 Lights[] to LIME (per LED non-mappati
+    #    a Keys: edge lighting, logo, slot fantasma).
+    $lime = Get-ClaymoreBrandColor "lime"
     for ($i = 0; $i -lt $Device.Lights.Count; $i++) {
-        $family = Get-LedFamily -Keymap $Keymap -LedIndex $i
-        $c = Get-ClaymoreBrandColor $family
-        $Device.Lights[$i].Red   = $c.R
-        $Device.Lights[$i].Green = $c.G
-        $Device.Lights[$i].Blue  = $c.B
+        $Device.Lights[$i].Red   = $lime.R
+        $Device.Lights[$i].Green = $lime.G
+        $Device.Lights[$i].Blue  = $lime.B
     }
+
+    # 2. Override per-key colors via Keys[] (107 entries) con family lookup
+    #    deterministic via .Code. Set ordine importante: Keys DOPO Lights cosi'
+    #    se SDK condivide buffer, l'ultimo write (Key family) vince per i tasti.
+    for ($i = 0; $i -lt $Device.Keys.Count; $i++) {
+        $key = $Device.Keys[$i]
+        $family = Get-ClaymoreKeyFamily -Code $key.Code
+        $c = Get-ClaymoreBrandColor $family
+        $key.Red   = $c.R
+        $key.Green = $c.G
+        $key.Blue  = $c.B
+    }
+
     $Device.Apply()
 }
 
 function Initialize-SdkAndDevices {
-    # Acquisisce SDK + control + switch a mode Direct.
-    # Ritorna PSCustomObject { Sdk; Devices } se OK, $null se fallisce dopo retry.
-
     $sdk = $null
     $attempt = 0
     while ($attempt -lt $RetryCount) {
@@ -91,14 +100,7 @@ function Initialize-SdkAndDevices {
 }
 
 function Invoke-ClaymoreBrandLayoutDaemon {
-    Write-Log "INFO" "claymore-brand-layout DAEMON START (keymap=$KeymapPath interval=${ReapplyIntervalSec}s)"
-
-    if (-not (Test-Path $KeymapPath)) {
-        Write-Log "ERROR" "Keymap not found: $KeymapPath"
-        exit 2
-    }
-    $keymap = Import-ClaymoreKeymap -Path $KeymapPath
-    Write-Log "INFO" "Keymap loaded: device=$($keymap.device) version=$($keymap.version) total_leds=$($keymap.leds.Count)"
+    Write-Log "INFO" "claymore-brand-layout DAEMON START (interval=${ReapplyIntervalSec}s, deterministic Code->family)"
 
     # --- Acquire iniziale ---
     $sdkState = Initialize-SdkAndDevices
@@ -109,34 +111,28 @@ function Invoke-ClaymoreBrandLayoutDaemon {
 
     # --- Loop forever ---
     # MAI chiamare ReleaseControl. SDK rilascia auto alla terminazione del processo.
-    # Re-apply idempotente ogni ReapplyIntervalSec secondi: ricopre il caso wake-from-sleep
-    # dove Aura Service prende temporaneamente il sopravvento.
-    # Log limitato (primo apply + ogni 60 iterazioni ~= 10min con interval 10s) per non spammare.
-
     $iter = 0
     while ($true) {
         $iter++
         try {
             foreach ($device in $sdkState.Devices) {
-                Set-DeviceColors -Device $device -Keymap $keymap
+                Set-DeviceBrandColors -Device $device
             }
             if ($iter -eq 1 -or ($iter % 60) -eq 0) {
                 Write-Log "INFO" "Apply iteration #$iter OK"
             }
         } catch {
             Write-Log "WARN" "Apply iteration #$iter failed: $($_.Exception.Message). Re-acquiring SDK..."
-            # Re-acquire dopo errore (wake-from-sleep, disconnect/reconnect, ecc)
             Start-Sleep -Seconds $RetryDelaySec
             $sdkState = Initialize-SdkAndDevices
             if ($null -eq $sdkState) {
-                Write-Log "WARN" "Re-acquire fallito iter #$iter. Aspetto poi riprovo nel prossimo loop."
+                Write-Log "WARN" "Re-acquire fallito iter #$iter. Aspetto next loop."
             } else {
                 Write-Log "INFO" "SDK re-acquired."
             }
         }
         Start-Sleep -Seconds $ReapplyIntervalSec
     }
-    # Unreachable (loop infinito). SDK rilasciato dal kernel su exit processo.
 }
 
 # Esegui solo se invocato come script, non se dot-sourced dai test
