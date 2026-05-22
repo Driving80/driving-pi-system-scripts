@@ -63,33 +63,50 @@ try {
         Write-Host ("  Name={0}  Lights={1}  {2}x{3}" -f $d.Name, $d.Lights.Count, $d.Width, $d.Height)
     }
 
-    # Target probe = WHITE (255,255,255): perceptual brightness ~100% vs magenta ~26%.
-    # Massima visibilita' per identificare i LED nella luce ambient normale.
-    $probe = @{ R = 255; G = 255; B = 255 }
-    $lime  = Get-ClaymoreBrandColor "lime"
-    $black = @{ R = 0; G = 0; B = 0 }
+    # Target probe = WHITE (255,255,255) - perceptual brightness ~100%.
+    # Background = dim_lime (60,75,0) - mantiene firmware in "active mode" (su tutti 0,0,0
+    # il firmware Claymore II entrava in sleep parziale e ignorava il LED bright).
+    # Contrasto white/dim_lime = altissimo per identificazione visiva.
+    $probe    = @{ R = 255; G = 255; B = 255 }
+    $dim_lime = @{ R = 60;  G = 75;  B = 0 }
+    $lime     = Get-ClaymoreBrandColor "lime"
 
     $ledCount = $devices[0].Lights.Count
     $lo = $StartIndex
     $hi = if ($EndIndex -lt 0) { $ledCount - 1 } else { [Math]::Min($EndIndex, $ledCount - 1) }
 
-    Write-Host "`nCalibrating LEDs $lo..$hi (writing both endpoints in mirror)" -ForegroundColor Cyan
+    # --- Inizializza tutti i LED a dim_lime UNA VOLTA (background "active") ---
+    Write-Host "Initializing dim_lime background on all LEDs..." -ForegroundColor Yellow
+    foreach ($device in $devices) {
+        for ($j = 0; $j -lt $device.Lights.Count; $j++) {
+            $device.Lights[$j].Red   = $dim_lime.R
+            $device.Lights[$j].Green = $dim_lime.G
+            $device.Lights[$j].Blue  = $dim_lime.B
+        }
+        $device.Apply()
+    }
+    Start-Sleep -Milliseconds 200
 
+    Write-Host "`nCalibrating LEDs $lo..$hi (white probe on dim_lime background, mirror)" -ForegroundColor Cyan
+
+    $previousLed = -1
     for ($i = $lo; $i -le $hi; $i++) {
         # Skip se gia' mappato e --Resume
         if ($Resume -and $ledMap.ContainsKey($i.ToString())) {
             continue
         }
 
-        # Spegni tutti i LED su tutti gli endpoint
-        foreach ($device in $devices) {
-            for ($j = 0; $j -lt $device.Lights.Count; $j++) {
-                $device.Lights[$j].Red   = $black.R
-                $device.Lights[$j].Green = $black.G
-                $device.Lights[$j].Blue  = $black.B
+        # Restore LED precedente a dim_lime (se c'era)
+        if ($previousLed -ge 0) {
+            foreach ($device in $devices) {
+                if ($previousLed -lt $device.Lights.Count) {
+                    $device.Lights[$previousLed].Red   = $dim_lime.R
+                    $device.Lights[$previousLed].Green = $dim_lime.G
+                    $device.Lights[$previousLed].Blue  = $dim_lime.B
+                }
             }
         }
-        # Accendi LED $i in WHITE BRIGHT su tutti gli endpoint (mirror) - max visibility
+        # Accendi LED $i in WHITE BRIGHT su tutti gli endpoint (mirror) - max contrast vs dim_lime
         foreach ($device in $devices) {
             if ($i -lt $device.Lights.Count) {
                 $device.Lights[$i].Red   = $probe.R
@@ -97,7 +114,9 @@ try {
                 $device.Lights[$i].Blue  = $probe.B
             }
         }
+        # Single Apply (gestisce restore+probe in un colpo)
         foreach ($device in $devices) { $device.Apply() }
+        $previousLed = $i
 
         Write-Host -NoNewline "LED[$i] - tasto WHITE acceso, famiglia? (l=lime c=cyan m=magenta s=skip q=quit) > "
         $response = Read-Host
