@@ -47,7 +47,7 @@ if (-not (Test-Path $ScriptPath)) {
 }
 
 # --- Cleanup vecchia istanza (idempotenza) ---
-$existing = schtasks /query /tn $TaskName 2>$null
+schtasks /query /tn $TaskName 2>$null | Out-Null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Existing task found, deleting..." -ForegroundColor Yellow
     schtasks /delete /tn $TaskName /f | Out-Null
@@ -96,7 +96,7 @@ $xml = @"
     <Hidden>false</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
     <WakeToRun>false</WakeToRun>
-    <ExecutionTimeLimit>PT2M</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
   </Settings>
   <Actions Context="Author">
     <Exec>
