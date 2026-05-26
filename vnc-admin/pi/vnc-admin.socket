@@ -5,6 +5,7 @@ Documentation=https://github.com/Driving80/driving-pi-system-scripts/blob/master
 [Socket]
 ListenStream=100.65.60.112:5901
 Accept=no
+Service=vnc-admin-proxy.service
 
 [Install]
 WantedBy=sockets.target
