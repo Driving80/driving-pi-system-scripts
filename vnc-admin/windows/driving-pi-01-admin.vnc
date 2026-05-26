@@ -1,5 +1,5 @@
 TigerVNC Configuration file Version 1.0
-ServerName=driving-pi-01:5901
+ServerName=100.65.60.112:5901
 SecurityTypes=VncAuth
 FullColor=1
 PreferredEncoding=Tight
