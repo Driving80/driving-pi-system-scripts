@@ -1,0 +1,10 @@
+TigerVNC Configuration file Version 1.0
+ServerName=100.65.60.112:5901
+SecurityTypes=VncAuth
+FullColor=1
+PreferredEncoding=Tight
+CompressLevel=2
+QualityLevel=8
+FullScreen=0
+SendClipboard=1
+AcceptClipboard=1

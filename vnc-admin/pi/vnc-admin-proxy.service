@@ -1,0 +1,11 @@
+[Unit]
+Description=systemd-socket-proxyd bridge for VNC admin
+Documentation=https://github.com/Driving80/driving-pi-system-scripts/blob/master/vnc-admin/README.md
+Requires=vnc-admin.service
+After=vnc-admin.service
+
+[Service]
+Type=notify
+ExecStart=/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:5999
+PrivateTmp=yes
+NoNewPrivileges=yes
