@@ -248,4 +248,78 @@ Describe "Brand layout apply (with mock SDK)" {
         $key59.G | Should Be 229
         $key59.B | Should Be 255
     }
+
+    It "Set-DeviceBrandColors -Mode off applies (0,0,0) to all Lights and Keys" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        Set-DeviceBrandColors -Device $script:mockDevice -Mode "off"
+
+        $script:mockApplyCount | Should Be 1
+        # Tutti i Lights a 0
+        $script:mockLightsWritten.Count | Should Be 5
+        foreach ($l in $script:mockLightsWritten) {
+            $l.R | Should Be 0
+            $l.G | Should Be 0
+            $l.B | Should Be 0
+        }
+        # Tutti i Keys a 0
+        $script:mockKeysWritten.Count | Should Be 3
+        foreach ($k in $script:mockKeysWritten) {
+            $k.R | Should Be 0
+            $k.G | Should Be 0
+            $k.B | Should Be 0
+        }
+    }
+}
+
+Describe "Get-ClaymoreMode flag reader" {
+    BeforeEach {
+        # Use a unique flag path per test run to avoid collision with live daemon flag
+        $script:testFlagPath = Join-Path $env:TEMP ("claymore-mode-test-" + [Guid]::NewGuid().ToString("N") + ".flag")
+    }
+
+    AfterEach {
+        if (Test-Path $script:testFlagPath) {
+            Remove-Item -Path $script:testFlagPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It "Returns 'brand' when flag file is absent (default)" {
+        # Dot-source daemon to load Get-ClaymoreMode, then override $script:ModeFlagPath
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $script:ModeFlagPath = $script:testFlagPath
+
+        Get-ClaymoreMode | Should Be "brand"
+    }
+
+    It "Returns 'off' when flag contains 'off'" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $script:ModeFlagPath = $script:testFlagPath
+        Set-Content -Path $script:testFlagPath -Value "off" -NoNewline -Encoding ASCII
+
+        Get-ClaymoreMode | Should Be "off"
+    }
+
+    It "Returns 'brand' when flag contains 'brand'" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $script:ModeFlagPath = $script:testFlagPath
+        Set-Content -Path $script:testFlagPath -Value "brand" -NoNewline -Encoding ASCII
+
+        Get-ClaymoreMode | Should Be "brand"
+    }
+
+    It "Returns 'brand' (safe default) for unknown flag content" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $script:ModeFlagPath = $script:testFlagPath
+        Set-Content -Path $script:testFlagPath -Value "potato" -NoNewline -Encoding ASCII
+
+        Get-ClaymoreMode | Should Be "brand"
+    }
+
+    It "Tolerates whitespace and case in flag content" {
+        . (Join-Path $repoRoot "claymore-brand-layout.ps1")
+        $script:ModeFlagPath = $script:testFlagPath
+        Set-Content -Path $script:testFlagPath -Value "  OFF  " -NoNewline -Encoding ASCII
+
+        Get-ClaymoreMode | Should Be "off"
+    }
 }
