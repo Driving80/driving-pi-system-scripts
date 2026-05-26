@@ -1,0 +1,19 @@
+#!/bin/sh
+# xstartup for Xvnc :1 admin desktop on driving-pi-01
+# Deployed to ~/.vnc/xstartup, mode 0755
+
+# Clean session manager handoff
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+# Launch DBus session bus (required by XFCE components)
+export $(dbus-launch)
+
+# Load Xresources if present
+[ -r "$HOME/.Xresources" ] && xrdb -merge "$HOME/.Xresources"
+
+# Keyboard layout: italian
+setxkbmap it
+
+# Launch XFCE desktop session
+exec startxfce4
