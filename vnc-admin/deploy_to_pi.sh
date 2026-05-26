@@ -31,6 +31,7 @@ echo "--- Step 2: apt install (sudo required, may prompt) ---"
 ssh -t "${PI_SSH}" "sudo apt-get install -y --no-install-recommends \
   tigervnc-standalone-server \
   tigervnc-common \
+  tigervnc-tools \
   xfce4 \
   xfce4-terminal \
   thunar \

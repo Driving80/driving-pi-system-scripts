@@ -1,8 +1,6 @@
-[connection]
-host=driving-pi-01
-port=5901
-
-[options]
+TigerVNC Configuration file Version 1.0
+ServerName=driving-pi-01:5901
+SecurityTypes=VncAuth
 FullColor=1
 PreferredEncoding=Tight
 CompressLevel=2
