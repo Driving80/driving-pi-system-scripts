@@ -1,0 +1,12 @@
+[Unit]
+Description=Xvnc :1 + XFCE desktop for admin use on driving-pi-01
+Documentation=https://github.com/Driving80/driving-pi-system-scripts/blob/master/vnc-admin/README.md
+After=dbus.socket
+
+[Service]
+Type=simple
+Environment=DISPLAY=:1
+ExecStart=/usr/bin/Xvnc :1 -rfbport 5999 -localhost -SecurityTypes VncAuth -PasswordFile %h/.vnc/passwd -geometry 1920x1080 -depth 24 -xstartup %h/.vnc/xstartup -AlwaysShared
+ExecStartPost=/usr/bin/systemd-run --user --unit=vnc-admin-idle-watch.service %h/.local/bin/vnc-admin-idle-watch.sh
+ExecStopPost=-/usr/bin/systemctl --user stop vnc-admin-idle-watch.service
+Restart=no
