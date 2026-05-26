@@ -1,0 +1,16 @@
+[connection]
+host=driving-pi-01
+port=5901
+
+[options]
+FullColor=1
+PreferredEncoding=Tight
+CompressLevel=2
+QualityLevel=8
+RemoteResize=1
+DesktopSize=1920x1080
+FullScreen=0
+SendClipboard=1
+AcceptClipboard=1
+SendPrimary=0
+AcceptPrimary=0
