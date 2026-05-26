@@ -1,13 +1,25 @@
 #!/bin/sh
-# xstartup for Xvnc :1 admin desktop on driving-pi-01
+# xstartup for Xvnc :7 admin desktop on driving-pi-01
 # Deployed to ~/.vnc/xstartup, mode 0755
+#
+# Stack: openbox (WM) + tint2 (panel) + xfce4-terminal, all under a
+# fresh dbus session, forced to X11 backend (DISPLAY=:7).
+#
+# CRITICAL: the labwc Wayland kiosk on the DSI 4.3" runs on the same
+# user session, so WAYLAND_DISPLAY is set in the inherited environment.
+# GTK and Qt apps prefer Wayland over X11 when both are available --
+# without these unsets / overrides, every GUI app would map onto the
+# DSI display instead of the Xtigervnc framebuffer.
 
-# Clean session manager handoff
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-
-# Launch DBus session bus (required by XFCE components)
-export $(dbus-launch)
+# Force X11 backend for GTK / Qt / SDL / etc
+unset WAYLAND_DISPLAY
+unset WAYLAND_SOCKET
+export GDK_BACKEND=x11
+export QT_QPA_PLATFORM=xcb
+export SDL_VIDEODRIVER=x11
+export XDG_SESSION_TYPE=x11
+export CLUTTER_BACKEND=x11
+export _JAVA_AWT_WM_NONREPARENTING=1
 
 # Load Xresources if present
 [ -r "$HOME/.Xresources" ] && xrdb -merge "$HOME/.Xresources"
@@ -15,5 +27,41 @@ export $(dbus-launch)
 # Keyboard layout: italian
 setxkbmap it
 
-# Launch XFCE desktop session
-exec startxfce4
+# Brand background: slate drivingtech.it_
+xsetroot -solid '#1a1d23'
+
+# Pre-configure openbox with a single workspace so apps cannot land on
+# an empty desktop that the user is not viewing.
+mkdir -p "$HOME/.config/openbox"
+cat > "$HOME/.config/openbox/rc.xml" <<'OBOX_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_config xmlns="http://openbox.org/3.4/rc">
+  <desktops>
+    <number>1</number>
+    <firstdesk>1</firstdesk>
+    <names><name>Admin</name></names>
+    <popupTime>0</popupTime>
+  </desktops>
+  <focus>
+    <focusNew>yes</focusNew>
+    <followMouse>no</followMouse>
+  </focus>
+  <placement>
+    <policy>Smart</policy>
+    <center>yes</center>
+  </placement>
+</openbox_config>
+OBOX_XML
+
+# Wrap WM + apps in a single DBus session so GTK apps can find the bus.
+# openbox runs in foreground (its exit ends the X session).
+exec dbus-run-session -- sh -c '
+    openbox &
+    OBPID=$!
+    sleep 2
+
+    tint2 &
+    xfce4-terminal --working-directory="$HOME" &
+
+    wait $OBPID
+'
