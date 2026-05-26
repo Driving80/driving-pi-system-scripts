@@ -1,0 +1,10 @@
+[Unit]
+Description=Socket activation for VNC admin desktop on driving-pi-01
+Documentation=https://github.com/Driving80/driving-pi-system-scripts/blob/master/vnc-admin/README.md
+
+[Socket]
+ListenStream=100.65.60.112:5901
+Accept=no
+
+[Install]
+WantedBy=sockets.target
