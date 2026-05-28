@@ -170,18 +170,29 @@ public class Display {
 }
 
 function Invoke-MouseJiggle {
-    # Move cursor +1px then back. Wake display da DPMS off (richiede input fisico).
+    # Wake display da SC_MONITORPOWER off. SetCursorPos NON basta: sposta solo il
+    # cursore senza generare un evento input HID, quindi Windows spesso non
+    # risveglia il monitor. mouse_event(MOUSEEVENTF_MOVE) inietta vero input HID.
     if (-not ("Mouse" -as [type])) {
         Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 public class Mouse {
+    [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT lpPoint);
     [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X; public int Y; }
 }
 "@
     }
+    # MOUSEEVENTF_MOVE = 0x0001 (movimento relativo = input HID reale)
+    for ($i = 0; $i -lt 5; $i++) {
+        [Mouse]::mouse_event(0x0001, 0, 8, 0, 0)
+        Start-Sleep -Milliseconds 40
+        [Mouse]::mouse_event(0x0001, 0, -8, 0, 0)
+        Start-Sleep -Milliseconds 40
+    }
+    # fallback: jiggle assoluto
     $pt = New-Object Mouse+POINT
     [void][Mouse]::GetCursorPos([ref]$pt)
     [void][Mouse]::SetCursorPos($pt.X + 1, $pt.Y)
